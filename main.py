@@ -1,8 +1,9 @@
+import os
+import shutil
 import getpass
 
 
-def setup_user():
-    setup: int = 0
+def setup_user(setup: int = 0):
     while setup != int(1) and setup != int(2) and setup != int(3) and setup != int(4):
         print('1 - Check Activity')
         print('2 - New User')
@@ -13,7 +14,6 @@ def setup_user():
         except ValueError:
             print('Not valid number')
 
-    path = ''
     if setup == 3:
         print('Example: \"C:\\Users\\ABC\\Documents\"')
         path = input('Path:')
@@ -23,8 +23,18 @@ def setup_user():
     return path
 
 
+def create_setup_files():
+    path = setup_user()
+    path = os.path.join(path, "E_Learn")
+    try:
+        os.mkdir(path)
+    except FileExistsError:
+        shutil.rmtree(path)
+        os.mkdir(path)
+
+
 if __name__ == '__main__':
-    print("Hi\nWelcome to E-Learn activity notifier\nIf you want to get notified"
+    print("Hi\nWelcome to E-Learn activity notifier\nIf you want to get notified "
           "about whats going on in course page as soon as possible, you are in right place")
 
-    path = setup_user()
+    create_setup_files()
