@@ -21,20 +21,27 @@ def setup_user(setup: int = 0):
     path = f'C:\\Users\\{getpass.getuser()}\\Documents'
     if setup == 3:
         print('Example: \"C:\\Users\\ABC\\Documents\\E_Learn\"')
-        user_path = input('Path:')
+        user_path = input('Path: ')
 
     return path, user_path, setup
+
+
+def write_config(address: str, content: json):
+    with open(address, 'w') as config:
+        json.dump(content, config, indent=4)
 
 
 def create_setup_files():
     global data
     path, user_path, setup = setup_user()
+
     if setup == 1:
         path = os.path.join(path, "E_Learn")
         config_path = os.path.join(path, "config.json")
         if os.path.isfile(config_path):
             with open(config_path) as config:
                 data = json.load(config)
+
     elif setup == 2 or setup == 4:
         path = os.path.join(path, "E_Learn")
         try:
@@ -43,8 +50,9 @@ def create_setup_files():
             shutil.rmtree(path)
             os.mkdir(path)
         init_data = {"config": []}
-        with open(os.path.join(path, "config.json"), 'w') as config:
-            json.dump(init_data, config, indent=4)
+        data = init_data
+        write_config(os.path.join(path, "config.json"), init_data)
+
     elif setup == 3:
         config_path = os.path.join(user_path, "config.json")
         if os.path.isfile(config_path):
@@ -56,17 +64,20 @@ def create_setup_files():
         except FileExistsError:
             shutil.rmtree(path)
             os.mkdir(path)
-        with open(os.path.join(path, "config.json"), 'w') as config:
-            json.dump(data, config, indent=4)
+        write_config(os.path.join(path, "config.json"), data)
 
     return path
 
 
 def print_list():
-    i = 1
-    for site in data["config"]:
-        print(str(i) + " - Name: " + site["name"] + " , " + "Address: " + site["address"])
-        i += 1
+    if len(data["config"]) == 0:
+        print("List is empty")
+    else:
+        i = 1
+        print(len(data["config"]))
+        for site in data["config"]:
+            print(str(i) + " - Name: " + site["name"] + " , " + "Address: " + site["address"])
+            i += 1
 
 
 def is_available(name="", address="") -> bool:
@@ -86,6 +97,7 @@ def modify_list(path):
             choice = int(input('Input: '))
         except ValueError:
             print('Not valid number')
+
         if choice == 1:
             name = input("Name: ")
             address = input("Address: ")
@@ -93,16 +105,20 @@ def modify_list(path):
                 data["config"].append({"name": name, "address": address})
             else:
                 print("This page is available")
-            print_list()
+
         elif choice == 2:
-            name = input("Name: ")
-            for i in range(len(data["config"])):
-                if data["config"][i]["name"] == name:
-                    del data["config"][i]
-                    break
-            print_list()
-    with open(os.path.join(path, "config.json"), 'w') as config:
-        json.dump(data, config, indent=4)
+            number = input("Number: ")
+            try:
+                if int(number) in range(1, len(data["config"])+1):
+                    del data["config"][int(number) - 1]
+                else:
+                    print("Number not in range")
+            except ValueError:
+                print('Not valid number')
+
+        print_list()
+
+    write_config(os.path.join(path, "config.json"), data)
 
 
 def confirmation(path):
