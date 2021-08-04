@@ -2,8 +2,11 @@ import os
 import json
 import shutil
 import getpass
+import requests
+from bs4 import BeautifulSoup
 
 data = json
+URL = "https://elearn.ut.ac.ir/"
 
 
 def setup_user(setup: int = 0):
@@ -94,7 +97,7 @@ def modify_files(path, add: [], remove: [], load):
             os.remove(os.path.join(path, file))
         for i in data["config"]:
             name = i["name"]
-            open(os.path.join(path,f'{name}.html'), 'w')
+            open(os.path.join(path, f'{name}.html'), 'w')
     else:
         add = [x + '.html' for x in add]
         remove = [x + '.html' for x in remove]
@@ -153,6 +156,34 @@ def confirmation(path, setup):
         modify_files(path, [], [], setup)
 
 
+def check_activity(path):
+    username = input("Username: ")
+    password = input("Password: ")
+
+    login_request = requests.get(URL)
+    session_req = requests.session()
+    result = session_req.get(login_request.url)
+    parser = BeautifulSoup(result.text, "html.parser")
+    execution = parser.find("input", type="hidden")["value"]
+
+    post_data = {'username': username, 'password': password, 'execution': execution,
+                 '_eventId': 'submit', 'submit': 'LOGIN', 'geolocation': ''}
+
+    session_req.post(login_request.url, data=post_data, headers=dict(refer=login_request.url))
+
+    print("-----------------------------------------------------------------------------------")
+    for site in data["config"]:
+        result = session_req.get(site["address"])
+        name = site["name"]
+        file = open(os.path.join(path, f"{name}.html"), 'r', encoding=result.encoding)
+        if not result.text == file.read():
+            print(f"Activity on: {name}")
+            file.close()
+            file = open(os.path.join(path, f"{name}.html"), 'w', encoding=result.encoding)
+            file.write(result.text)
+    print("-----------------------------------------------------------------------------------")
+
+
 if __name__ == '__main__':
     print("Hi\nWelcome to E-Learn activity notifier\nIf you want to get notified "
           "about whats going on in course page as soon as possible, you are in right place")
@@ -160,3 +191,4 @@ if __name__ == '__main__':
     path, setup = create_setup_files()
     print_list()
     confirmation(path, setup)
+    check_activity(path)
