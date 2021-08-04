@@ -66,7 +66,7 @@ def create_setup_files():
             os.mkdir(path)
         write_config(os.path.join(path, "config.json"), data)
 
-    return path
+    return path, setup
 
 
 def print_list():
@@ -74,7 +74,6 @@ def print_list():
         print("List is empty")
     else:
         i = 1
-        print(len(data["config"]))
         for site in data["config"]:
             print(str(i) + " - Name: " + site["name"] + " , " + "Address: " + site["address"])
             i += 1
@@ -87,8 +86,28 @@ def is_available(name="", address="") -> bool:
     return False
 
 
-def modify_list(path):
+def modify_files(path, add: [], remove: [], load):
+    if load == 3:
+        files = os.listdir(path)
+        files.remove('config.json')
+        for file in files:
+            os.remove(os.path.join(path, file))
+        for i in data["config"]:
+            name = i["name"]
+            open(os.path.join(path,f'{name}.html'), 'w')
+    else:
+        add = [x + '.html' for x in add]
+        remove = [x + '.html' for x in remove]
+        for i in add:
+            open(os.path.join(path, i), 'w')
+        for j in remove:
+            os.remove(os.path.join(path, j))
+
+
+def modify_list(path, setup):
     choice = 0
+    create = []
+    delete = []
     while choice != int(3):
         print("1 - Add")
         print("2 - Remove")
@@ -103,13 +122,15 @@ def modify_list(path):
             address = input("Address: ")
             if not is_available(name, address):
                 data["config"].append({"name": name, "address": address})
+                create.append(name)
             else:
                 print("This page is available")
 
         elif choice == 2:
             number = input("Number: ")
             try:
-                if int(number) in range(1, len(data["config"])+1):
+                if int(number) in range(1, len(data["config"]) + 1):
+                    delete.append(data["config"][int(number) - 1]["name"])
                     del data["config"][int(number) - 1]
                 else:
                     print("Number not in range")
@@ -119,20 +140,23 @@ def modify_list(path):
         print_list()
 
     write_config(os.path.join(path, "config.json"), data)
+    modify_files(path, create, delete, setup)
 
 
-def confirmation(path):
+def confirmation(path, setup):
     confirm = 'x'
     while confirm.upper() != 'Y' and confirm.upper() != 'N':
         confirm = input("Do you confirm ? (Y/N) ")
     if confirm.upper() == 'N':
-        modify_list(path)
+        modify_list(path, setup)
+    elif confirm.upper() == 'Y':
+        modify_files(path, [], [], setup)
 
 
 if __name__ == '__main__':
     print("Hi\nWelcome to E-Learn activity notifier\nIf you want to get notified "
           "about whats going on in course page as soon as possible, you are in right place")
 
-    path = create_setup_files()
+    path, setup = create_setup_files()
     print_list()
-    confirmation(path)
+    confirmation(path, setup)
