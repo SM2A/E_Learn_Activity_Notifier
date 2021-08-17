@@ -174,13 +174,17 @@ def check_activity(path):
     print("-----------------------------------------------------------------------------------")
     for site in data["config"]:
         result = session_req.get(site["address"])
+        content_parse = BeautifulSoup(result.text, "html.parser")
+        content = content_parse.find("div", {"class": "course-content"})
+        for s in content.select('input'):
+            s.extract()
         name = site["name"]
         file = open(os.path.join(path, f"{name}.html"), 'r', encoding=result.encoding)
-        if not result.text == file.read():
+        if not str(content) == str(file.read()):
             print(f"Activity on: {name}")
             file.close()
             file = open(os.path.join(path, f"{name}.html"), 'w', encoding=result.encoding)
-            file.write(result.text)
+            file.write(str(content))
     print("-----------------------------------------------------------------------------------")
 
 
