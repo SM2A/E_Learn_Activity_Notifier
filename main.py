@@ -1,9 +1,12 @@
 import os
 import json
 import shutil
+import urllib3
 import getpass
 import requests
 from bs4 import BeautifulSoup
+
+urllib3.disable_warnings()
 
 data = json
 URL = "https://elearn.ut.ac.ir/"
@@ -160,16 +163,16 @@ def check_activity(path):
     username = input("Username: ")
     password = input("Password: ")
 
-    login_request = requests.get(URL)
+    login_request = requests.get(URL,verify=False)
     session_req = requests.session()
-    result = session_req.get(login_request.url)
+    result = session_req.get(login_request.url,verify=False)
     parser = BeautifulSoup(result.text, "html.parser")
     execution = parser.find("input", type="hidden")["value"]
 
     post_data = {'username': username, 'password': password, 'execution': execution,
                  '_eventId': 'submit', 'submit': 'LOGIN', 'geolocation': ''}
 
-    session_req.post(login_request.url, data=post_data, headers=dict(refer=login_request.url))
+    session_req.post(login_request.url, data=post_data, headers=dict(refer=login_request.url),verify=False)
 
     print("-----------------------------------------------------------------------------------")
     for site in data["config"]:
