@@ -10,6 +10,10 @@ urllib3.disable_warnings()
 
 data = json
 URL = "https://elearn.ut.ac.ir/"
+new_activity_name = []
+new_activity_address = []
+session_req = requests.session()
+encoding = None
 
 
 def setup_user(setup: int = 0):
@@ -159,36 +163,60 @@ def confirmation(path, setup):
         modify_files(path, [], [], setup)
 
 
+def get_page_content(address):
+    result = session_req.get(address)
+    content_parse = BeautifulSoup(result.text, "html.parser")
+    content = content_parse.find("div", {"class": "course-content"})
+    for s in content.select('input'):
+        s.extract()
+    return content
+
+
+def write_file(name, content):
+    file = open(os.path.join(path, f"{name}.html"), 'w', encoding=encoding)
+    file.write(str(content))
+
+
 def check_activity(path):
     username = input("Username: ")
     password = input("Password: ")
 
-    login_request = requests.get(URL,verify=False)
-    session_req = requests.session()
-    result = session_req.get(login_request.url,verify=False)
+    login_request = requests.get(URL, verify=False)
+    result = session_req.get(login_request.url, verify=False)
+    global encoding
+    encoding = result.encoding
     parser = BeautifulSoup(result.text, "html.parser")
     execution = parser.find("input", type="hidden")["value"]
 
     post_data = {'username': username, 'password': password, 'execution': execution,
                  '_eventId': 'submit', 'submit': 'LOGIN', 'geolocation': ''}
 
-    session_req.post(login_request.url, data=post_data, headers=dict(refer=login_request.url),verify=False)
+    session_req.post(login_request.url, data=post_data, headers=dict(refer=login_request.url), verify=False)
 
     print("-----------------------------------------------------------------------------------")
     for site in data["config"]:
-        result = session_req.get(site["address"])
-        content_parse = BeautifulSoup(result.text, "html.parser")
-        content = content_parse.find("div", {"class": "course-content"})
-        for s in content.select('input'):
-            s.extract()
+        content = get_page_content(site["address"])
         name = site["name"]
-        file = open(os.path.join(path, f"{name}.html"), 'r', encoding=result.encoding)
+        file = open(os.path.join(path, f"{name}.html"), 'r', encoding=encoding)
         if not str(content) == str(file.read()):
             print(f"Activity on: {name}")
+            new_activity_name.append(name)
+            new_activity_address.append(site["address"])
             file.close()
-            file = open(os.path.join(path, f"{name}.html"), 'w', encoding=result.encoding)
-            file.write(str(content))
     print("-----------------------------------------------------------------------------------")
+
+
+def review_activity():
+    if len(new_activity_name) == 0:
+        return
+    confirm = 'x'
+    while confirm.upper() != 'Y' and confirm.upper() != 'N':
+        confirm = input("Did you review activity ? (Y/N) ")
+    if confirm.upper() == 'N':
+        return
+    elif confirm.upper() == 'Y':
+        for i in range(len(new_activity_name)):
+            write_file(new_activity_name[i], get_page_content(new_activity_address[i]))
 
 
 if __name__ == '__main__':
@@ -199,3 +227,4 @@ if __name__ == '__main__':
     print_list()
     confirmation(path, setup)
     check_activity(path)
+    review_activity()
