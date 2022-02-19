@@ -1,3 +1,3 @@
-# E_Learn_Activity_Notifier
+# E-Learn Activity Notifier
 
-Currently only available for Winows
+Currently only available on Winows
