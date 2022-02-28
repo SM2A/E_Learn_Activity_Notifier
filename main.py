@@ -179,7 +179,7 @@ def write_file(name, content):
 
 def check_activity(path):
     username = input("Username: ")
-    password = input("Password: ")
+    password = getpass.getpass(prompt='Password: ')
 
     login_request = requests.get(URL, verify=False)
     result = session_req.get(login_request.url, verify=False)
